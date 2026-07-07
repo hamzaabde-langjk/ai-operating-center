@@ -1,0 +1,43 @@
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y build-essential cmake libspdlog-dev libsqlite3-dev \
+    libgtest-dev libbenchmark-dev libbpf-dev linux-headers-$(uname -r) \
+    libglm-dev libgl1-mesa-dev qt6-base-dev qt6-tools-dev \
+    python3 python3-pip
+
+# Arch Linux
+sudo pacman -S --needed base-devel cmake spdlog sqlite gtest benchmark \
+    libbpf linux-headers glm mesa qt6-base qt6-tools python python-pip
+
+# Fedora
+sudo dnf install -y gcc-c++ cmake spdlog-devel sqlite3-devel gtest-devel \
+    google-benchmark-devel libbpf-devel kernel-headers glm-devel \
+    mesa-libGL-devel qt6-qtbase-devel qt6-qttools-devel python3 python3-pip
+
+
+
+# Process monitor (like htop)
+sudo ./cli/xray-top
+
+# System monitor (CPU, memory, network)
+sudo ./cli/xray-monitor
+
+# Main CLI with monitoring
+sudo ./cli/xray --monitor --log-level=info
+
+# GUI (if built with Qt6)
+sudo ./gui/xray-gui
+
+# Run tests
+./tests/xray-tests
+
+# Run benchmarks
+./benchmarks/xray-benchmarks
+
+
+# All-in-one for Ubuntu/Debian:
+sudo apt-get update && sudo apt-get install -y build-essential cmake libspdlog-dev libsqlite3-dev libgtest-dev libglm-dev libgl1-mesa-dev
+cd Linux-XRay && mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DXRAY_BUILD_GUI=OFF -DXRAY_ENABLE_EBPF=OFF -DXRAY_BUILD_TESTS=OFF
+make -j$(nproc)
+sudo ./cli/xray-top
