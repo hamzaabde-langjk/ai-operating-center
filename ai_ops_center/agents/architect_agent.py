@@ -12,18 +12,12 @@ class ArchitectAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Architect Agent. Your role is to:
-"
-            "1. Design system architecture for given requirements
-"
-            "2. Choose appropriate technologies and patterns
-"
-            "3. Define data models and API contracts
-"
-            "4. Create component diagrams and relationships
-"
-            "5. Ensure scalability, security, and maintainability
-"
+            "You are the Architect Agent. Your role is to:"
+            "1. Design system architecture for given requirements"
+            "2. Choose appropriate technologies and patterns"
+            "3. Define data models and API contracts"
+            "4. Create component diagrams and relationships"
+            "5. Ensure scalability, security, and maintainability"
             "Be precise, use industry best practices, and document decisions."
         )
 
