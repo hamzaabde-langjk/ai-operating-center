@@ -58,7 +58,7 @@ Format as structured JSON.
             'generated_code': self._generate_agent_code(design),
         }
 
-    def _generate_agent_code(self, design: Dict) -> str:
+    def _generate_agent_code(self, design: dict) -> str:
         class_name = design.get('name', 'CustomAgent').replace(' ', '').replace('_', '') + 'Agent'
 
         code = f'''class {class_name}(AgentBase):
