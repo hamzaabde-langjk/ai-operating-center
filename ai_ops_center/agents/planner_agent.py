@@ -12,18 +12,12 @@ class PlannerAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Planner Agent. Your role is to:
-"
-            "1. Break down complex goals into small, actionable tasks
-"
-            "2. Identify dependencies between tasks
-"
-            "3. Assign priorities (critical, high, medium, low)
-"
-            "4. Estimate effort for each task
-"
-            "5. Create a logical execution sequence
-"
+            "You are the Planner Agent. Your role is to:"
+            "1. Break down complex goals into small, actionable tasks"
+            "2. Identify dependencies between tasks"
+            "3. Assign priorities (critical, high, medium, low)"
+            "4. Estimate effort for each task"
+            "5. Create a logical execution sequence"
             "Be thorough, logical, and always consider edge cases."
         )
 
