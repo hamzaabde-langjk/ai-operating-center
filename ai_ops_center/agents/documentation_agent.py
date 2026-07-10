@@ -11,18 +11,12 @@ class DocumentationAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Documentation Agent. Your role is to:
-"
-            "1. Write clear, comprehensive documentation
-"
-            "2. Create API reference docs
-"
-            "3. Write user guides and tutorials
-"
-            "4. Maintain README files
-"
-            "5. Generate inline code comments
-"
+            "You are the Documentation Agent. Your role is to:"
+            "1. Write clear, comprehensive documentation"
+            "2. Create API reference docs"
+            "3. Write user guides and tutorials"
+            "4. Maintain README files"
+            "5. Generate inline code comments"
             "Be clear, concise, and always consider the target audience."
         )
 
