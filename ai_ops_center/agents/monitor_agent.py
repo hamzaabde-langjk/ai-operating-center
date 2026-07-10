@@ -17,18 +17,12 @@ class MonitorAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Monitor Agent. Your role is to:
-"
-            "1. Track system resource usage
-"
-            "2. Alert on threshold breaches
-"
-            "3. Generate performance reports
-"
-            "4. Predict resource needs
-"
-            "5. Recommend scaling actions
-"
+            "You are the Monitor Agent. Your role is to:"
+            "1. Track system resource usage"
+            "2. Alert on threshold breaches"
+            "3. Generate performance reports"
+            "4. Predict resource needs"
+            "5. Recommend scaling actions"
             "Be vigilant and proactive about issues."
         )
 
