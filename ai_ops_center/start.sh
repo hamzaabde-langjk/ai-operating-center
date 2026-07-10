@@ -24,6 +24,40 @@ warning() {
     echo -e "${YELLOW}  $1${NC}"
 }
 
+# ============================================
+# دالة للتحقق من Ollama وإعادة المحاولة
+# ============================================
+wait_for_ollama() {
+    local max_attempts=30
+    local attempt=1
+    local wait_time=2
+    
+    log "Waiting for Ollama to be ready..."
+    
+    while [ $attempt -le $max_attempts ]; do
+        if curl -s http://localhost:11434 > /dev/null 2>&1; then
+            success "Ollama is ready!"
+            return 0
+        fi
+        
+        # التحقق من أن عملية ollama لا تزال تعمل
+        if ! pgrep -f "ollama serve" > /dev/null; then
+            warning "Ollama process died. Restarting..."
+            nohup ollama serve > logs/ollama.log 2>&1 &
+            OLLAMA_PID=$!
+        fi
+        
+        warning "Attempt $attempt/$max_attempts: Ollama not ready yet..."
+        sleep $wait_time
+        attempt=$((attempt + 1))
+    done
+    
+    error "Ollama failed to start after $max_attempts attempts."
+    error "Please check logs/ollama.log for details."
+    error "You can also try running 'ollama serve' manually in another terminal."
+    return 1
+}
+
 log "Checking Python installation..."
 if ! command -v python3 &> /dev/null; then
     error "Python3 not found. Please install Python3 first."
@@ -77,12 +111,30 @@ log "Starting Ollama service..."
 
 if ! curl -s http://localhost:11434 > /dev/null; then
     warning "Ollama not running. Starting Ollama in background..."
+    mkdir -p logs
     nohup ollama serve > logs/ollama.log 2>&1 &
     OLLAMA_PID=$!
     log "Ollama started with PID: $OLLAMA_PID"
-    sleep 5
+    
+    # انتظار حتى يصبح Ollama جاهزاً
+    if ! wait_for_ollama; then
+        error "Cannot continue without Ollama."
+        exit 1
+    fi
 else
     success "Ollama is already running"
+    # التحقق من أن Ollama يستجيب بشكل صحيح
+    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+        warning "Ollama is running but not responding properly. Restarting..."
+        pkill -f "ollama serve" 2>/dev/null
+        sleep 2
+        nohup ollama serve > logs/ollama.log 2>&1 &
+        OLLAMA_PID=$!
+        if ! wait_for_ollama; then
+            error "Cannot continue without Ollama."
+            exit 1
+        fi
+    fi
 fi
 
 
@@ -106,12 +158,23 @@ if [ ${#MISSING_MODELS[@]} -ne 0 ]; then
     
     for model in "${MISSING_MODELS[@]}"; do
         log "Downloading $model..."
-        ollama pull "$model"
-        if [ $? -eq 0 ]; then
-            success " $model downloaded successfully!"
-        else
-            error " Failed to download $model"
-        fi
+        # إعادة محاولة تحميل النموذج إذا فشل
+        retry_count=0
+        max_retries=3
+        while [ $retry_count -lt $max_retries ]; do
+            if ollama pull "$model"; then
+                success " $model downloaded successfully!"
+                break
+            else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $max_retries ]; then
+                    warning "Failed to download $model. Retrying ($retry_count/$max_retries)..."
+                    sleep 3
+                else
+                    error " Failed to download $model after $max_retries attempts."
+                fi
+            fi
+        done
     done
 else
     success "All required models are available!"
@@ -150,7 +213,7 @@ log "Waiting for application to start..."
 sleep 5
 
 log "Starting Cloudflare Tunnel..."
-cloudflared tunnel --url http://localhost:5000 &
+cloudflared tunnel --url http://localhost:5000 > logs/cloudflare.log 2>&1 &
 CLOUDFLARE_PID=$!
 success "Cloudflare Tunnel started with PID: $CLOUDFLARE_PID"
 
