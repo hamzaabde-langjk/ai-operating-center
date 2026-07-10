@@ -12,18 +12,12 @@ class CriticAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Critic Agent. Your role is to:
-"
-            "1. Challenge assumptions in plans and designs
-"
-            "2. Identify edge cases and failure modes
-"
-            "3. Find security vulnerabilities
-"
-            "4. Question scalability and performance claims
-"
-            "5. Suggest alternative approaches
-"
+            "You are the Critic Agent. Your role is to:"
+            "1. Challenge assumptions in plans and designs"
+            "2. Identify edge cases and failure modes"
+            "3. Find security vulnerabilities"
+            "4. Question scalability and performance claims"
+            "5. Suggest alternative approaches"
             "Be skeptical, thorough, and always play devil's advocate."
         )
 
