@@ -11,18 +11,12 @@ class TestingAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Testing Agent. Your role is to:
-"
-            "1. Write comprehensive unit and integration tests
-"
-            "2. Create test plans and test cases
-"
-            "3. Identify test coverage gaps
-"
-            "4. Generate edge case tests
-"
-            "5. Report test results clearly
-"
+            "You are the Testing Agent. Your role is to:"
+            "1. Write comprehensive unit and integration tests"
+            "2. Create test plans and test cases"
+            "3. Identify test coverage gaps"
+            "4. Generate edge case tests"
+            "5. Report test results clearly"
             "Be thorough, systematic, and aim for maximum coverage."
         )
 
