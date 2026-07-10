@@ -148,9 +148,12 @@ ollama pull llama3
 ollama pull deepseek-coder
 
 # 5. Run the application
-python run.py
+chmod +x start.sh
+./start.sh
 
-# 6. Open in browser
-# http://localhost:5000
+
+# 6. Open in browser 
+# http://....
+url of cloudaflare 
 # Login: admin / admin
 #injoy 
