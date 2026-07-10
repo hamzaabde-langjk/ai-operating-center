@@ -5,28 +5,24 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' 
-
+NC='\033[0m'
 
 log() {
     echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
 success() {
-    echo -e "${GREEN} $1${NC}"
+    echo -e "${GREEN}$1${NC}"
 }
 
 error() {
-    echo -e "${RED} $1${NC}"
+    echo -e "${RED}$1${NC}"
 }
 
 warning() {
-    echo -e "${YELLOW}  $1${NC}"
+    echo -e "${YELLOW}$1${NC}"
 }
 
-# ============================================
-# دالة للتحقق من Ollama وإعادة المحاولة
-# ============================================
 wait_for_ollama() {
     local max_attempts=30
     local attempt=1
@@ -40,7 +36,6 @@ wait_for_ollama() {
             return 0
         fi
         
-        # التحقق من أن عملية ollama لا تزال تعمل
         if ! pgrep -f "ollama serve" > /dev/null; then
             warning "Ollama process died. Restarting..."
             nohup ollama serve > logs/ollama.log 2>&1 &
@@ -58,83 +53,127 @@ wait_for_ollama() {
     return 1
 }
 
-# ============================================
-# دالة لتشغيل التطبيق و Cloudflare Tunnel
-# ============================================
-run_application_with_tunnel() {
-    log "Starting AI Operations Center in background..."
+start_and_verify_app() {
+    log "Starting AI Operations Center (run.py) in background..."
     
-    # إيقاف العمليات السابقة
     pkill -f "python3 run.py" 2>/dev/null
-    pkill -f "cloudflared tunnel" 2>/dev/null
+    sleep 2
     
-    # تشغيل التطبيق
     nohup python3 run.py > logs/app.log 2>&1 &
     APP_PID=$!
-    success "Application started with PID: $APP_PID"
+    success "Application started in background with PID: $APP_PID"
     
-    log "Waiting for application to start..."
-    sleep 5
+    sleep 2
+    if ! kill -0 $APP_PID 2>/dev/null; then
+        error "Application process died immediately. Check logs/app.log"
+        tail -20 logs/app.log
+        return 1
+    fi
+    success "Application process is running (PID: $APP_PID)"
     
-    # تشغيل Cloudflare Tunnel
+    local max_attempts=30
+    local attempt=1
+    local wait_time=2
+    
+    log "Waiting for application to be ready on port 5000..."
+    
+    while [ $attempt -le $max_attempts ]; do
+        if curl -s http://localhost:5000 > /dev/null 2>&1; then
+            success "Application is ready on port 5000!"
+            return 0
+        fi
+        
+        if ! kill -0 $APP_PID 2>/dev/null; then
+            warning "Application process died. Restarting..."
+            nohup python3 run.py > logs/app.log 2>&1 &
+            APP_PID=$!
+            sleep 2
+        fi
+        
+        if [ $((attempt % 5)) -eq 0 ]; then
+            warning "Last 3 lines from app.log:"
+            tail -3 logs/app.log 2>/dev/null || echo "  (no logs yet)"
+        fi
+        
+        warning "Attempt $attempt/$max_attempts: Application not ready yet..."
+        sleep $wait_time
+        attempt=$((attempt + 1))
+    done
+    
+    error "Application failed to start after $max_attempts attempts."
+    error "Please check logs/app.log for details:"
+    tail -20 logs/app.log
+    return 1
+}
+
+start_cloudflare_tunnel() {
     log "Starting Cloudflare Tunnel..."
-    cloudflared tunnel --url http://localhost:5000 > logs/cloudflare.log 2>&1 &
+    
+    pkill -f "cloudflared tunnel" 2>/dev/null
+    sleep 2
+    
+    nohup cloudflared tunnel --url http://localhost:5000 > logs/cloudflare.log 2>&1 &
     CLOUDFLARE_PID=$!
-    success "Cloudflare Tunnel started with PID: $CLOUDFLARE_PID"
+    success "Cloudflare Tunnel started in background with PID: $CLOUDFLARE_PID"
+    
+    sleep 2
+    if ! kill -0 $CLOUDFLARE_PID 2>/dev/null; then
+        error "Cloudflare Tunnel died immediately. Check logs/cloudflare.log"
+        tail -20 logs/cloudflare.log
+        return 1
+    fi
     
     log "Waiting for Cloudflare Tunnel to establish connection..."
     sleep 8
     
-    # استخراج الرابط العام
     TUNNEL_URL=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' logs/cloudflare.log 2>/dev/null | head -1)
     
     if [ -z "$TUNNEL_URL" ]; then
         TUNNEL_URL="Waiting for tunnel URL... Check logs/cloudflare.log"
     fi
     
-    # عرض النتائج
+    echo "$TUNNEL_URL"
+}
+
+show_results() {
+    local TUNNEL_URL="$1"
+    
     echo ""
     echo "============================================"
-    echo -e "${GREEN} AI Operations Center is now LIVE!${NC}"
+    echo "AI Operations Center is now LIVE!"
     echo "============================================"
     echo ""
-    echo -e "${BLUE} Public URL:${NC}"
-    echo -e "   ${GREEN}${TUNNEL_URL}${NC}"
+    echo "Public URL:"
+    echo "   ${TUNNEL_URL}"
     echo ""
-    echo -e "${BLUE} Local URL:${NC}"
+    echo "Local URL:"
     echo "   http://localhost:5000"
     echo ""
-    echo -e "${BLUE} Login Credentials:${NC}"
+    echo "Login Credentials:"
     echo "   Username: admin"
     echo "   Password: admin123"
     echo ""
-    echo -e "${BLUE} Ollama Status:${NC}"
-    echo "   - Service: $(curl -s http://localhost:11434 > /dev/null && echo ' Running' || echo ' Not running')"
+    echo "Ollama Status:"
+    echo "   - Service: $(curl -s http://localhost:11434 > /dev/null && echo 'Running' || echo 'Not running')"
     echo "   - Models: $(ollama list | wc -l) models available"
     echo ""
-    echo -e "${BLUE} Monitoring:${NC}"
+    echo "Monitoring:"
     echo "   - App PID: $APP_PID"
     echo "   - Cloudflare PID: $CLOUDFLARE_PID"
     echo "   - App Logs: logs/app.log"
     echo "   - Ollama Logs: logs/ollama.log"
     echo "   - Cloudflare Logs: logs/cloudflare.log"
     echo ""
-    echo -e "${YELLOW}  Press Ctrl+C to stop all services${NC}"
+    echo "Press Ctrl+C to stop all services"
     echo "============================================"
     
-    # حفظ المعلومات
     echo "$TUNNEL_URL" > logs/tunnel_url.txt
     echo "APP_PID=$APP_PID" > logs/services.pid
     echo "CLOUDFLARE_PID=$CLOUDFLARE_PID" >> logs/services.pid
-    echo "OLLAMA_PID=$OLLAMA_PID" >> logs/services.pid
-    
-    # انتظار حتى إيقاف التشغيل
-    wait $CLOUDFLARE_PID
+    if [ ! -z "$OLLAMA_PID" ]; then
+        echo "OLLAMA_PID=$OLLAMA_PID" >> logs/services.pid
+    fi
 }
-
-# ============================================
-# بدء التشغيل
-# ============================================
 
 log "Checking Python installation..."
 if ! command -v python3 &> /dev/null; then
@@ -154,9 +193,7 @@ log "Installing Python dependencies..."
 pip install -r requirements.txt
 success "Python dependencies installed!"
 
-
 log "Checking Ollama installation..."
-
 
 install_ollama() {
     warning "Ollama not found. Installing Ollama..."
@@ -177,7 +214,6 @@ install_ollama() {
     fi
 }
 
-
 if ! command -v ollama &> /dev/null; then
     install_ollama
 else
@@ -186,7 +222,6 @@ fi
 
 log "Starting Ollama service..."
 
-
 if ! curl -s http://localhost:11434 > /dev/null; then
     warning "Ollama not running. Starting Ollama in background..."
     mkdir -p logs
@@ -194,14 +229,12 @@ if ! curl -s http://localhost:11434 > /dev/null; then
     OLLAMA_PID=$!
     log "Ollama started with PID: $OLLAMA_PID"
     
-    # انتظار حتى يصبح Ollama جاهزاً
     if ! wait_for_ollama; then
         error "Cannot continue without Ollama."
         exit 1
     fi
 else
     success "Ollama is already running"
-    # التحقق من أن Ollama يستجيب بشكل صحيح
     if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
         warning "Ollama is running but not responding properly. Restarting..."
         pkill -f "ollama serve" 2>/dev/null
@@ -215,9 +248,6 @@ else
     fi
 fi
 
-# ============================================
-# النماذج الصحيحة (بدون أرقام الإصدارات)
-# ============================================
 log "Checking required Ollama models..."
 
 REQUIRED_MODELS=("qwen3" "deepseek-coder" "llama3")
@@ -239,7 +269,7 @@ if [ ${#MISSING_MODELS[@]} -ne 0 ]; then
         max_retries=3
         while [ $retry_count -lt $max_retries ]; do
             if ollama pull "$model"; then
-                success " $model downloaded successfully!"
+                success "$model downloaded successfully!"
                 break
             else
                 retry_count=$((retry_count + 1))
@@ -247,7 +277,7 @@ if [ ${#MISSING_MODELS[@]} -ne 0 ]; then
                     warning "Failed to download $model. Retrying ($retry_count/$max_retries)..."
                     sleep 3
                 else
-                    error " Failed to download $model after $max_retries attempts."
+                    error "Failed to download $model after $max_retries attempts."
                     warning "You can try downloading it manually: ollama pull $model"
                 fi
             fi
@@ -257,10 +287,8 @@ else
     success "All required models are available!"
 fi
 
-
 log "Available Ollama models:"
 ollama list
-
 
 log "Installing Cloudflare Tunnel..."
 if ! command -v cloudflared &> /dev/null; then
@@ -275,7 +303,13 @@ fi
 
 mkdir -p logs
 
-# ============================================
-# تشغيل التطبيق و Cloudflare Tunnel
-# ============================================
-run_application_with_tunnel
+if ! start_and_verify_app; then
+    error "Failed to start application. Exiting."
+    exit 1
+fi
+
+TUNNEL_URL=$(start_cloudflare_tunnel)
+
+show_results "$TUNNEL_URL"
+
+wait $CLOUDFLARE_PID
