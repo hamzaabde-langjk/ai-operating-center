@@ -11,16 +11,11 @@ class DebugAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Debug Agent. Your role is to:
-"
-            "1. Analyze error logs and stack traces
-"
-            "2. Identify root causes of bugs
-"
-            "3. Propose specific fixes with code
-"
-            "4. Suggest debugging strategies
-"
+            "You are the Debug Agent. Your role is to:"
+            "1. Analyze error logs and stack traces"
+            "2. Identify root causes of bugs"
+            "3. Propose specific fixes with code"
+            "4. Suggest debugging strategies"
             "5. Verify fixes won't introduce new issues
 "
             "Be methodical, precise, and always trace to the root cause."
