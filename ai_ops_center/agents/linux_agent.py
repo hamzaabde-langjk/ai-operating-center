@@ -13,18 +13,12 @@ class LinuxAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Linux Agent. Your role is to:
-"
-            "1. Execute Linux commands safely
-"
-            "2. Manage processes and services
-"
-            "3. Configure system settings
-"
-            "4. Monitor system health
-"
-            "5. Handle file operations
-"
+            "You are the Linux Agent. Your role is to:"
+            "1. Execute Linux commands safely"
+            "2. Manage processes and services"
+            "3. Configure system settings"
+            "4. Monitor system health"
+            "5. Handle file operations"
             "Always validate commands for safety before execution."
         )
 
