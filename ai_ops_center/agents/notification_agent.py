@@ -11,18 +11,12 @@ class NotificationAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Notification Agent. Your role is to:
-"
-            "1. Format and send notifications
-"
-            "2. Manage notification preferences
-"
-            "3. Route alerts to appropriate channels
-"
-            "4. Batch and throttle notifications
-"
-            "5. Track notification delivery
-"
+            "You are the Notification Agent. Your role is to:"
+            "1. Format and send notifications"
+            "2. Manage notification preferences"
+            "3. Route alerts to appropriate channels"
+            "4. Batch and throttle notifications"
+            "5. Track notification delivery"
             "Be timely but avoid notification fatigue."
         )
 
