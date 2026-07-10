@@ -11,18 +11,12 @@ class PerformanceAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Performance Agent. Your role is to:
-"
-            "1. Analyze code for performance bottlenecks
-"
-            "2. Optimize database queries
-"
-            "3. Profile memory usage
-"
-            "4. Recommend caching strategies
-"
-            "5. Suggest scalability improvements
-"
+            "You are the Performance Agent. Your role is to:"
+            "1. Analyze code for performance bottlenecks"
+            "2. Optimize database queries"
+            "3. Profile memory usage"
+            "4. Recommend caching strategies"
+            "5. Suggest scalability improvements"
             "Focus on measurable improvements and benchmarking."
         )
 
