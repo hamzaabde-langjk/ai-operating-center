@@ -4,6 +4,7 @@ from enum import Enum as PyEnum
 from sqlalchemy import Enum, JSON, Text, Integer, String, DateTime, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship, declarative_base
 from . import db
+from flask_login import UserMixin
 
 Base = declarative_base()
 
@@ -30,9 +31,9 @@ class AgentStatus(PyEnum):
     PAUSED = 'paused'
 
 class UserRole(PyEnum):
-    ADMIN = 'admin'
-    OPERATOR = 'operator'
-    VIEWER = 'viewer'
+    ADMIN = 'ADMIN'        #
+    OPERATOR = 'OPERATOR'  # 
+    VIEWER = 'VIEWER'      #
 
 class Project(db.Model):
     __tablename__ = 'projects'
