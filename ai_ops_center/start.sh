@@ -141,7 +141,7 @@ fi
 log "Checking required Ollama models..."
 
 
-REQUIRED_MODELS=("qwen3:7b" "deepseek-coder:6.7b" "llama3:8b")
+REQUIRED_MODELS=("qwen3" "deepseek-coder:6.7b" "llama3:8b")
 MISSING_MODELS=()
 
 
