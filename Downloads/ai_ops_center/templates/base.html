@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Operations Center{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --rightbar-width: 300px;
+            --bottom-height: 250px;
+            --primary: #0d6efd;
+            --success: #198754;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --dark: #212529;
+            --darker: #1a1d20;
+            --darkest: #121416;
+        }
+
+        body {
+            background: var(--darkest);
+            color: #e9ecef;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            border-right: 1px solid #373b3e;
+        }
+
+        .rightbar {
+            width: var(--rightbar-width);
+            background: var(--dark);
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            overflow-y: auto;
+            border-left: 1px solid #373b3e;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-right: var(--rightbar-width);
+            height: calc(100vh - var(--bottom-height));
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .bottom-panel {
+            position: fixed;
+            bottom: 0;
+            left: var(--sidebar-width);
+            right: var(--rightbar-width);
+            height: var(--bottom-height);
+            background: var(--darker);
+            border-top: 1px solid #373b3e;
+        }
+
+        .nav-link {
+            color: #adb5bd;
+            padding: 12px 20px;
+            border-radius: 0;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background: var(--primary);
+        }
+
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+        }
+
+        .card {
+            background: var(--dark);
+            border: 1px solid #373b3e;
+            color: #e9ecef;
+        }
+
+        .card-header {
+            background: var(--darker);
+            border-bottom: 1px solid #373b3e;
+            font-weight: 600;
+        }
+
+        .metric-card {
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--darker);
+            margin-bottom: 15px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: #adb5bd;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-idle { background: var(--success); }
+        .status-busy { background: var(--warning); }
+        .status-error { background: var(--danger); }
+        .status-offline { background: #6c757d; }
+
+        .log-entry {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+            padding: 3px 0;
+            border-bottom: 1px solid #2a2d30;
+        }
+
+        .log-info { color: #0dcaf0; }
+        .log-warning { color: var(--warning); }
+        .log-error { color: var(--danger); }
+        .log-success { color: var(--success); }
+
+        #agent-graph {
+            height: 400px;
+            background: var(--darker);
+            border-radius: 8px;
+        }
+
+        .terminal-container {
+            height: 100%;
+            padding: 10px;
+        }
+
+        .task-queue-item {
+            padding: 8px 12px;
+            background: var(--darker);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .task-priority-critical { border-left-color: var(--danger); }
+        .task-priority-high { border-left-color: var(--warning); }
+        .task-priority-medium { border-left-color: var(--primary); }
+        .task-priority-low { border-left-color: #6c757d; }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #495057;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6c757d;
+        }
+
+        .progress-thin {
+            height: 4px;
+        }
+
+        .badge-agent {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+
+    <script>
+        const socket = io();
+
+        socket.on('connect', function() {
+            console.log('Connected to AI Operations Center');
+        });
+
+        socket.on('agent_log', function(data) {
+            appendLog(data.agent, data.message);
+        });
+
+        socket.on('task_created', function(data) {
+            updateTaskQueue();
+        });
+
+        socket.on('task_updated', function(data) {
+            updateTaskQueue();
+        });
+
+        function appendLog(source, message) {
+            const logContainer = document.getElementById('live-logs');
+            if (!logContainer) return;
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            let level = 'INFO';
+            if (message.includes('ERROR')) level = 'ERROR';
+            else if (message.includes('WARNING')) level = 'WARNING';
+            else if (message.includes('completed')) level = 'SUCCESS';
+
+            entry.classList.add('log-' + level.toLowerCase());
+            entry.textContent = message;
+
+            logContainer.insertBefore(entry, logContainer.firstChild);
+
+            while (logContainer.children.length > 100) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        function updateTaskQueue() {
+            // Fetch and update task queue
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
