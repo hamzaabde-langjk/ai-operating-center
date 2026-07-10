@@ -58,6 +58,84 @@ wait_for_ollama() {
     return 1
 }
 
+# ============================================
+# دالة لتشغيل التطبيق و Cloudflare Tunnel
+# ============================================
+run_application_with_tunnel() {
+    log "Starting AI Operations Center in background..."
+    
+    # إيقاف العمليات السابقة
+    pkill -f "python3 run.py" 2>/dev/null
+    pkill -f "cloudflared tunnel" 2>/dev/null
+    
+    # تشغيل التطبيق
+    nohup python3 run.py > logs/app.log 2>&1 &
+    APP_PID=$!
+    success "Application started with PID: $APP_PID"
+    
+    log "Waiting for application to start..."
+    sleep 5
+    
+    # تشغيل Cloudflare Tunnel
+    log "Starting Cloudflare Tunnel..."
+    cloudflared tunnel --url http://localhost:5000 > logs/cloudflare.log 2>&1 &
+    CLOUDFLARE_PID=$!
+    success "Cloudflare Tunnel started with PID: $CLOUDFLARE_PID"
+    
+    log "Waiting for Cloudflare Tunnel to establish connection..."
+    sleep 8
+    
+    # استخراج الرابط العام
+    TUNNEL_URL=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' logs/cloudflare.log 2>/dev/null | head -1)
+    
+    if [ -z "$TUNNEL_URL" ]; then
+        TUNNEL_URL="Waiting for tunnel URL... Check logs/cloudflare.log"
+    fi
+    
+    # عرض النتائج
+    echo ""
+    echo "============================================"
+    echo -e "${GREEN} AI Operations Center is now LIVE!${NC}"
+    echo "============================================"
+    echo ""
+    echo -e "${BLUE} Public URL:${NC}"
+    echo -e "   ${GREEN}${TUNNEL_URL}${NC}"
+    echo ""
+    echo -e "${BLUE} Local URL:${NC}"
+    echo "   http://localhost:5000"
+    echo ""
+    echo -e "${BLUE} Login Credentials:${NC}"
+    echo "   Username: admin"
+    echo "   Password: admin123"
+    echo ""
+    echo -e "${BLUE} Ollama Status:${NC}"
+    echo "   - Service: $(curl -s http://localhost:11434 > /dev/null && echo ' Running' || echo ' Not running')"
+    echo "   - Models: $(ollama list | wc -l) models available"
+    echo ""
+    echo -e "${BLUE} Monitoring:${NC}"
+    echo "   - App PID: $APP_PID"
+    echo "   - Cloudflare PID: $CLOUDFLARE_PID"
+    echo "   - App Logs: logs/app.log"
+    echo "   - Ollama Logs: logs/ollama.log"
+    echo "   - Cloudflare Logs: logs/cloudflare.log"
+    echo ""
+    echo -e "${YELLOW}  Press Ctrl+C to stop all services${NC}"
+    echo "============================================"
+    
+    # حفظ المعلومات
+    echo "$TUNNEL_URL" > logs/tunnel_url.txt
+    echo "APP_PID=$APP_PID" > logs/services.pid
+    echo "CLOUDFLARE_PID=$CLOUDFLARE_PID" >> logs/services.pid
+    echo "OLLAMA_PID=$OLLAMA_PID" >> logs/services.pid
+    
+    # انتظار حتى إيقاف التشغيل
+    wait $CLOUDFLARE_PID
+}
+
+# ============================================
+# بدء التشغيل
+# ============================================
+
 log "Checking Python installation..."
 if ! command -v python3 &> /dev/null; then
     error "Python3 not found. Please install Python3 first."
@@ -137,13 +215,13 @@ else
     fi
 fi
 
-
+# ============================================
+# النماذج الصحيحة (بدون أرقام الإصدارات)
+# ============================================
 log "Checking required Ollama models..."
 
-
-REQUIRED_MODELS=("qwen3" "deepseek-coder:6.7b" "llama3:8b")
+REQUIRED_MODELS=("qwen3" "deepseek-coder" "llama3")
 MISSING_MODELS=()
-
 
 for model in "${REQUIRED_MODELS[@]}"; do
     if ! ollama list | grep -q "$model"; then
@@ -151,14 +229,12 @@ for model in "${REQUIRED_MODELS[@]}"; do
     fi
 done
 
-
 if [ ${#MISSING_MODELS[@]} -ne 0 ]; then
     warning "Missing models: ${MISSING_MODELS[*]}"
     log "Downloading missing models..."
     
     for model in "${MISSING_MODELS[@]}"; do
         log "Downloading $model..."
-        # إعادة محاولة تحميل النموذج إذا فشل
         retry_count=0
         max_retries=3
         while [ $retry_count -lt $max_retries ]; do
@@ -172,6 +248,7 @@ if [ ${#MISSING_MODELS[@]} -ne 0 ]; then
                     sleep 3
                 else
                     error " Failed to download $model after $max_retries attempts."
+                    warning "You can try downloading it manually: ollama pull $model"
                 fi
             fi
         done
@@ -198,68 +275,7 @@ fi
 
 mkdir -p logs
 
-log "Starting AI Operations Center in background..."
-
-
-pkill -f "python3 run.py" 2>/dev/null
-pkill -f "cloudflared tunnel" 2>/dev/null
-
-nohup python3 run.py > logs/app.log 2>&1 &
-APP_PID=$!
-success "Application started with PID: $APP_PID"
-
- 
-log "Waiting for application to start..."
-sleep 5
-
-log "Starting Cloudflare Tunnel..."
-cloudflared tunnel --url http://localhost:5000 > logs/cloudflare.log 2>&1 &
-CLOUDFLARE_PID=$!
-success "Cloudflare Tunnel started with PID: $CLOUDFLARE_PID"
-
-
-log "Waiting for Cloudflare Tunnel to establish connection..."
-sleep 8
-
-
-TUNNEL_URL=$(grep -o 'https://[a-zA-Z0-9-]*\.trycloudflare\.com' logs/cloudflare.log 2>/dev/null | head -1)
-if [ -z "$TUNNEL_URL" ]; then
-    TUNNEL_URL="Waiting for tunnel URL... Check logs/cloudflare.log"
-fi
-
-echo ""
-echo "============================================"
-echo -e "${GREEN} AI Operations Center is now LIVE!${NC}"
-echo "============================================"
-echo ""
-echo -e "${BLUE} Public URL:${NC}"
-echo -e "   ${GREEN}${TUNNEL_URL}${NC}"
-echo ""
-echo -e "${BLUE} Local URL:${NC}"
-echo "   http://localhost:5000"
-echo ""
-echo -e "${BLUE} Login Credentials:${NC}"
-echo "   Username: admin"
-echo "   Password: admin123"
-echo ""
-echo -e "${BLUE} Ollama Status:${NC}"
-echo "   - Service: $(curl -s http://localhost:11434 > /dev/null && echo ' Running' || echo ' Not running')"
-echo "   - Models: $(ollama list | wc -l) models available"
-echo ""
-echo -e "${BLUE} Monitoring:${NC}"
-echo "   - App PID: $APP_PID"
-echo "   - Cloudflare PID: $CLOUDFLARE_PID"
-echo "   - App Logs: logs/app.log"
-echo "   - Ollama Logs: logs/ollama.log"
-echo "   - Cloudflare Logs: logs/cloudflare.log"
-echo ""
-echo -e "${YELLOW}  Press Ctrl+C to stop all services${NC}"
-echo "============================================"
-
-
-echo "$TUNNEL_URL" > logs/tunnel_url.txt
-echo "APP_PID=$APP_PID" > logs/services.pid
-echo "CLOUDFLARE_PID=$CLOUDFLARE_PID" >> logs/services.pid
-
-
-wait $CLOUDFLARE_PID
+# ============================================
+# تشغيل التطبيق و Cloudflare Tunnel
+# ============================================
+run_application_with_tunnel
