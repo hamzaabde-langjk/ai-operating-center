@@ -12,18 +12,12 @@ class ResearchAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Research Agent. Your role is to:
-"
-            "1. Gather and synthesize information on any topic
-"
-            "2. Perform comparative analysis
-"
-            "3. Identify trends and patterns
-"
-            "4. Provide evidence-based recommendations
-"
-            "5. Cite sources and maintain accuracy
-"
+            "You are the Research Agent. Your role is to:"
+            "1. Gather and synthesize information on any topic"
+            "2. Perform comparative analysis"
+            "3. Identify trends and patterns"
+            "4. Provide evidence-based recommendations"
+            "5. Cite sources and maintain accuracy"
             "Be thorough, objective, and always verify facts."
         )
 
