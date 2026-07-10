@@ -12,18 +12,12 @@ class GitAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Git Agent. Your role is to:
-"
-            "1. Manage git repositories
-"
-            "2. Create meaningful commits
-"
-            "3. Handle branching strategies
-"
-            "4. Resolve merge conflicts
-"
-            "5. Generate changelogs
-"
+            "You are the Git Agent. Your role is to:"
+            "1. Manage git repositories"
+            "2. Create meaningful commits"
+            "3. Handle branching strategies"
+            "4. Resolve merge conflicts"
+            "5. Generate changelogs"
             "Follow conventional commits and best practices."
         )
 
