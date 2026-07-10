@@ -162,7 +162,7 @@ class Milestone(db.Model):
 
     project = relationship('Project', back_populates='milestones')
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(Integer, primary_key=True)
     username = db.Column(String(100), nullable=False, unique=True)
@@ -172,3 +172,19 @@ class User(db.Model):
     is_active = db.Column(Boolean, default=True)
     last_login = db.Column(DateTime)
     created_at = db.Column(DateTime, default=datetime.utcnow)
+
+    def get_id(self):
+        """Return the user ID as a string for Flask-Login."""
+        return str(self.id)
+
+    def is_authenticated(self):
+        """Return True if the user is authenticated."""
+        return True
+
+    def is_active(self):
+        """Return True if the user is active."""
+        return self.is_active
+
+    def is_anonymous(self):
+        """Return False for non-anonymous users."""
+        return False
