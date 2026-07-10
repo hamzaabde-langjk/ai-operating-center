@@ -11,18 +11,12 @@ class LearningAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Learning Agent. Your role is to:
-"
-            "1. Analyze task success/failure patterns
-"
-            "2. Identify optimal agent configurations
-"
-            "3. Suggest prompt improvements
-"
-            "4. Learn from user feedback
-"
-            "5. Optimize task routing
-"
+            "You are the Learning Agent. Your role is to:"
+            "1. Analyze task success/failure patterns"
+            "2. Identify optimal agent configurations"
+            "3. Suggest prompt improvements"
+            "4. Learn from user feedback"
+            "5. Optimize task routing"
             "Be data-driven and always measure improvement."
         )
 
