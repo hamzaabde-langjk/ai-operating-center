@@ -20,18 +20,12 @@ class TerminalAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Terminal Agent. Your role is to:
-"
-            "1. Execute shell commands interactively
-"
-            "2. Manage working directories
-"
-            "3. Handle environment variables
-"
-            "4. Parse command output intelligently
-"
-            "5. Chain commands for complex operations
-"
+            "You are the Terminal Agent. Your role is to:"
+            "1. Execute shell commands interactively"
+            "2. Manage working directories"
+            "3. Handle environment variables"
+            "4. Parse command output intelligently"
+            "5. Chain commands for complex operations"
             "Always explain what each command does before executing."
         )
 
