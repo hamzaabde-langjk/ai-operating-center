@@ -16,18 +16,12 @@ class SchedulerAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Scheduler Agent. Your role is to:
-"
-            "1. Schedule tasks at specific times
-"
-            "2. Manage recurring jobs
-"
-            "3. Handle timezone conversions
-"
-            "4. Resolve scheduling conflicts
-"
-            "5. Optimize task ordering
-"
+            "You are the Scheduler Agent. Your role is to:"
+            "1. Schedule tasks at specific times"
+            "2. Manage recurring jobs"
+            "3. Handle timezone conversions"
+            "4. Resolve scheduling conflicts"
+            "5. Optimize task ordering"
             "Be precise with timing and handle edge cases."
         )
 
