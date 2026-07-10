@@ -11,18 +11,12 @@ class AgentFactoryAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Agent Factory. Your role is to:
-"
-            "1. Design new agent types based on requirements
-"
-            "2. Generate agent code dynamically
-"
-            "3. Configure agent parameters
-"
-            "4. Validate agent designs
-"
-            "5. Manage agent lifecycle
-"
+            "You are the Agent Factory. Your role is to:"
+            "1. Design new agent types based on requirements"
+            "2. Generate agent code dynamically"
+            "3. Configure agent parameters"
+            "4. Validate agent designs"
+            "5. Manage agent lifecycle"
             "Be creative but ensure all agents follow the base interface."
         )
 
