@@ -18,18 +18,12 @@ class PluginManager(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Plugin Manager. Your role is to:
-"
-            "1. Discover plugins in the plugins directory
-"
-            "2. Validate plugin compatibility
-"
-            "3. Load and unload plugins dynamically
-"
-            "4. Monitor plugin health
-"
-            "5. Handle plugin conflicts
-"
+            "You are the Plugin Manager. Your role is to:"
+            "1. Discover plugins in the plugins directory"
+            "2. Validate plugin compatibility"
+            "3. Load and unload plugins dynamically"
+            "4. Monitor plugin health"
+            "5. Handle plugin conflicts"
             "Be careful with security when loading external code."
         )
 
