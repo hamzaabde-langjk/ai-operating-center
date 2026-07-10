@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - AI Operations Center{% endblock %}
+
+{% block content %}
+<nav class="sidebar">
+    <div class="p-3">
+        <h5 class="text-white mb-4"><i class="bi bi-cpu-fill text-primary"></i> AI Ops Center</h5>
+    </div>
+    <div class="nav flex-column">
+        <a class="nav-link" href="/"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" href="/projects"><i class="bi bi-folder"></i> Projects</a>
+        <a class="nav-link" href="/agents"><i class="bi bi-robot"></i> Agents</a>
+        <a class="nav-link" href="/plugins"><i class="bi bi-puzzle"></i> Plugins</a>
+        <a class="nav-link" href="/memory"><i class="bi bi-memory"></i> Memory</a>
+        <a class="nav-link active" href="/settings"><i class="bi bi-gear"></i> Settings</a>
+    </div>
+</nav>
+
+<main class="main-content" style="margin-right: 0;">
+    <h4 class="mb-4"><i class="bi bi-gear"></i> Settings</h4>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">LLM Configuration</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Default Temperature</label>
+                        <input type="range" class="form-range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                        <div class="small text-muted">Value: <span id="temp-value">0.7</span></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Tokens</label>
+                        <input type="number" id="max-tokens" class="form-control bg-dark border-secondary text-white" value="4096">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Context Length</label>
+                        <input type="number" id="context-length" class="form-control bg-dark border-secondary text-white" value="8192">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">System Limits</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Max Agents</label>
+                        <input type="number" id="max-agents" class="form-control bg-dark border-secondary text-white" value="50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Max Concurrent Tasks</label>
+                        <input type="number" id="max-tasks" class="form-control bg-dark border-secondary text-white" value="20">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Task Timeout (seconds)</label>
+                        <input type="number" id="task-timeout" class="form-control bg-dark border-secondary text-white" value="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Model Assignments</div>
+        <div class="card-body">
+            <div class="row" id="model-assignments">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button class="btn btn-primary" onclick="saveSettings()">
+            <i class="bi bi-save"></i> Save Settings
+        </button>
+    </div>
+</main>
+
+<script>
+const agentRoles = ['ceo', 'planner', 'architect', 'research', 'coding', 'review', 'critic', 
+                    'testing', 'debug', 'linux', 'terminal', 'security', 'performance', 
+                    'documentation', 'git', 'memory', 'learning', 'monitor', 'notification', 
+                    'scheduler', 'plugin_manager', 'agent_factory'];
+
+const defaultModels = {
+    'ceo': 'qwen3', 'planner': 'qwen3', 'architect': 'qwen3', 'research': 'llama3',
+    'coding': 'deepseek-coder', 'review': 'qwen3', 'critic': 'qwen3', 'testing': 'qwen3',
+    'debug': 'deepseek-coder', 'linux': 'qwen3', 'terminal': 'qwen3', 'security': 'qwen3',
+    'performance': 'qwen3', 'documentation': 'qwen3', 'git': 'qwen3', 'memory': 'qwen3',
+    'learning': 'qwen3', 'monitor': 'qwen3', 'notification': 'qwen3', 'scheduler': 'qwen3',
+    'plugin_manager': 'qwen3', 'agent_factory': 'qwen3'
+};
+
+function loadSettings() {
+    const container = document.getElementById('model-assignments');
+    container.innerHTML = agentRoles.map(role => `
+        <div class="col-md-4 mb-3">
+            <label class="form-label text-capitalize">${role.replace('_', ' ')}</label>
+            <select class="form-select bg-dark border-secondary text-white" id="model-${role}">
+                <option value="qwen3" ${defaultModels[role] === 'qwen3' ? 'selected' : ''}>qwen3</option>
+                <option value="llama3" ${defaultModels[role] === 'llama3' ? 'selected' : ''}>llama3</option>
+                <option value="deepseek-coder" ${defaultModels[role] === 'deepseek-coder' ? 'selected' : ''}>deepseek-coder</option>
+                <option value="mistral">mistral</option>
+                <option value="codellama">codellama</option>
+            </select>
+        </div>
+    `).join('');
+}
+
+function saveSettings() {
+    const settings = {};
+    agentRoles.forEach(role => {
+        settings[`model_${role}`] = document.getElementById(`model-${role}`).value;
+    });
+    settings.default_temperature = document.getElementById('temperature').value;
+    settings.default_max_tokens = document.getElementById('max-tokens').value;
+
+    fetch('/api/v1/settings', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(settings)
+    })
+    .then(() => alert('Settings saved!'));
+}
+
+document.getElementById('temperature').addEventListener('input', function() {
+    document.getElementById('temp-value').textContent = this.value;
+});
+
+loadSettings();
+</script>
+{% endblock %}
