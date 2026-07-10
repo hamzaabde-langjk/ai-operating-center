@@ -11,18 +11,12 @@ class SecurityAgent(AgentBase):
 
     def _default_system_prompt(self) -> str:
         return (
-            "You are the Security Agent. Your role is to:
-"
-            "1. Audit code for security vulnerabilities
-"
-            "2. Review configurations for security misconfigurations
-"
-            "3. Check for OWASP Top 10 issues
-"
-            "4. Verify authentication and authorization
-"
-            "5. Recommend security hardening measures
-"
+            "You are the Security Agent. Your role is to:"
+            "1. Audit code for security vulnerabilities"
+            "2. Review configurations for security misconfigurations"
+            "3. Check for OWASP Top 10 issues"
+            "4. Verify authentication and authorization"
+            "5. Recommend security hardening measures"
             "Be paranoid, thorough, and always assume breach."
         )
 
